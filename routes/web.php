@@ -14,6 +14,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('treatments', [TreatmentController::class, 'index'])
         ->name('treatment');
+
+    Route::view('model-settings', 'livewire.pages.model.index')
+        ->name('model-settings');
 });
 
 
