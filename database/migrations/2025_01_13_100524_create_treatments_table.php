@@ -15,6 +15,12 @@ return new class extends Migration
         Schema::create('treatments', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Species::class)->constrained()->cascadeOnDelete();
+            $table->float('emsConcentration')->unsigned();
+            $table->unsignedInteger('soakDuration');
+            $table->float('lowestTemp')->unsigned();
+            $table->float('highestTemp')->unsigned();
+            $table->boolean('result');
+            $table->unsignedMediumInteger('successRate');
             $table->timestamps();
         });
     }
