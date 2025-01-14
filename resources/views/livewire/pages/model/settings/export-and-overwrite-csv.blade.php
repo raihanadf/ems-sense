@@ -23,6 +23,7 @@ new class extends Component {
 
             // Get treatments from database
             $dbTreatments = Treatment::with('species')
+                ->where('is_verified', true)
                 ->get()
                 ->map(function ($treatment) {
                     return [

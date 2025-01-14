@@ -12,21 +12,24 @@ new class extends Component {
     public $selectedSpecies = '';
     public $selectedResult = '';
 
-    public function mount()
+    #[On('treatment-created')]
+    public function getLatestTreatments()
     {
-        $this->getLatestTreatments();
+        $this->resetPage();
+    }
+
+    public function toggleVerification(Treatment $treatment)
+    {
+        if (auth()->user()->id == 1) {
+            $treatment->update([
+                'is_verified' => !$treatment->is_verified
+            ]);
+        }
     }
 
     public function getSpecies(): Collection
     {
         return Species::orderBy('name')->get();
-    }
-
-    #[On('treatment-created')]
-    public function getLatestTreatments()
-    {
-        // reset pagination when new treatment is added
-        $this->resetPage();
     }
 
     public function getTreatments()
@@ -52,17 +55,19 @@ new class extends Component {
     <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
             <label for="species" class="block text-sm font-medium text-gray-700 mb-1">Filter by Species</label>
-            <select wire:model.live="selectedSpecies" id="species" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <select wire:model.live="selectedSpecies" id="species"
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">All Species</option>
                 @foreach($this->getSpecies() as $species)
-                    <option value="{{ $species->id }}">{{ $species->name }}</option>
+                <option value="{{ $species->id }}">{{ $species->name }}</option>
                 @endforeach
             </select>
         </div>
 
         <div>
             <label for="result" class="block text-sm font-medium text-gray-700 mb-1">Filter by Result</label>
-            <select wire:model.live="selectedResult" id="result" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <select wire:model.live="selectedResult" id="result"
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">All Results</option>
                 <option value="success">Success</option>
                 <option value="failure">Failure</option>
@@ -81,6 +86,9 @@ new class extends Component {
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Highest Temp</th>
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Date</th>
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Results</th>
+                    @if(auth()->user()->id == 1)
+                    <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Verified</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -94,11 +102,29 @@ new class extends Component {
                     <td class="py-2 px-4 border-b text-sm">{{ $treatment->created_at->format('Y-m-d') }}</td>
                     <td class="py-2 px-4 border-b text-sm">
                         @if ($treatment->result)
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Success</span>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Success</span>
                         @else
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failure</span>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failure</span>
                         @endif
                     </td>
+                    @if(auth()->user()->id == 1)
+                    <td class="py-2 px-4 border-b text-sm">
+                        <button
+                            wire:click="toggleVerification({{ $treatment->id }})"
+                            class="focus:outline-none"
+                        >
+                            @if($treatment->is_verified)
+                            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            @else
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            @endif
+                        </button>
+                    </td>
+                    @endif
                 </tr>
                 @endforeach
             </tbody>
