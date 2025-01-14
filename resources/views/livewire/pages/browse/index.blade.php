@@ -4,7 +4,7 @@
             {{ __('Browse Treatments') }}
         </h2>
     </x-slot>
-    <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         <livewire:pages.browse.list />
     </div>
 </x-app-layout>

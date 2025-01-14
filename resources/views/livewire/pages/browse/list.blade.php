@@ -79,6 +79,7 @@ new class extends Component {
         <table class="min-w-full bg-white">
             <thead class="bg-gray-100">
                 <tr>
+                    <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">By</th>
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Species</th>
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Concentration</th>
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Soak Duration</th>
@@ -94,6 +95,7 @@ new class extends Component {
             <tbody>
                 @foreach($this->getTreatments() as $treatment)
                 <tr class="hover:bg-gray-50">
+                    <td class="py-2 px-4 border-b text-sm">{{ $treatment->user->name }}</td>
                     <td class="py-2 px-4 border-b text-sm">{{ $treatment->species->name }}</td>
                     <td class="py-2 px-4 border-b text-sm">{{ $treatment->emsConcentration }}%</td>
                     <td class="py-2 px-4 border-b text-sm">{{ $treatment->soakDuration }} min</td>
