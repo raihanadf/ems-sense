@@ -79,8 +79,10 @@ new class extends Component {
     public function save()
     {
         $speciesId = Species::where('name', $this->selectedSpecies)->first()->id;
+        $userId = auth()->user()->id;
 
         Treatment::create([
+            'user_id' => $userId,
             'species_id' => $speciesId,
             'emsConcentration' => (float) $this->concentration,
             'soakDuration' => (int) $this->soakDuration,
@@ -95,7 +97,7 @@ new class extends Component {
 }; ?>
 
 <div class="relative">
-    <div class="max-w-2xl mx-auto mt-2 p-6 bg-white rounded-lg shadow-md">
+    <div class="max-w-4xl mx-auto mt-2 p-6 bg-white rounded-lg shadow-md">
         <form class="space-y-4" wire:submit="processForm">
             <div class="w-full">
                 <label for="selectedSpecies" class="block text-sm font-medium text-gray-700">Species</label>
