@@ -72,7 +72,7 @@ new class extends Component {
 <section>
     <header>
         <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Model Settings') }}
+            {{ __('Retrain Model') }}
         </h2>
         <p class="mt-1 text-sm text-gray-600">
             {{ __("Retrain the model with the latest dataset to improve predictions.") }}
