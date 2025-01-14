@@ -1,8 +1,10 @@
 <?php
 
 
+
 use App\Models\Treatment;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 
 new class extends Component {
@@ -10,6 +12,12 @@ new class extends Component {
     public Collection $treatments;
 
     public function mount()
+    {
+        $this->getLatestTreatments();
+    }
+
+    #[On('treatment-created')]
+    public function getLatestTreatments()
     {
         $this->treatments = Treatment::where('user_id', auth()->user()->id)->orderBy('created_at', 'desc')->limit(10)->get();
     }
