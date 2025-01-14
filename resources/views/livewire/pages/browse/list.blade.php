@@ -108,7 +108,7 @@ new class extends Component {
                         @endif
                     </td>
                     @if(auth()->user()->id == 1)
-                    <td class="py-2 px-4 border-b text-sm">
+                    <td class="py-2 px-4 border-b text-sm flex justify-center">
                         <button
                             wire:click="toggleVerification({{ $treatment->id }})"
                             class="focus:outline-none"
