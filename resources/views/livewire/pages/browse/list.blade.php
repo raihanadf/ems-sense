@@ -79,6 +79,7 @@ new class extends Component {
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Soak Duration</th>
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Lowest Temp</th>
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Highest Temp</th>
+                    <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Date</th>
                     <th class="py-2 px-4 border-b text-left text-sm font-semibold text-gray-700">Results</th>
                 </tr>
             </thead>
@@ -90,6 +91,7 @@ new class extends Component {
                     <td class="py-2 px-4 border-b text-sm">{{ $treatment->soakDuration }} min</td>
                     <td class="py-2 px-4 border-b text-sm">{{ $treatment->lowestTemp }}°C</td>
                     <td class="py-2 px-4 border-b text-sm">{{ $treatment->highestTemp }}°C</td>
+                    <td class="py-2 px-4 border-b text-sm">{{ $treatment->created_at->format('Y-m-d') }}</td>
                     <td class="py-2 px-4 border-b text-sm">
                         @if ($treatment->result)
                             <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Success</span>
