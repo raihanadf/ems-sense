@@ -17,6 +17,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::view('model-settings', 'livewire.pages.model.index')
         ->name('model-settings');
+
+    Route::view('browse', 'livewire.pages.browse.index')
+        ->name('browse');
 });
 
 
