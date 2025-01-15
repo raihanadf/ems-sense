@@ -20,7 +20,7 @@ new class extends Component {
 
     public function toggleVerification(Treatment $treatment)
     {
-        if (auth()->user()->id == 1) {
+        if (auth()->user()->is_curator() && $treatment->is_added != 1) {
             $treatment->update([
                 'is_verified' => !$treatment->is_verified
             ]);
@@ -104,25 +104,33 @@ new class extends Component {
                     <td class="py-2 px-4 border-b text-sm">{{ $treatment->created_at->format('Y-m-d') }}</td>
                     <td class="py-2 px-4 border-b text-sm">
                         @if ($treatment->result)
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Success</span>
+                        <span
+                            class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Success</span>
                         @else
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failure</span>
+                        <span
+                            class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failure</span>
                         @endif
                     </td>
                     @if(auth()->user()->id == 1)
                     <td class="py-2 px-4 border-b text-sm flex justify-center">
-                        <button
-                            wire:click="toggleVerification({{ $treatment->id }})"
-                            class="focus:outline-none"
-                        >
+                        <button wire:click="toggleVerification({{ $treatment->id }})" class="focus:outline-none">
                             @if($treatment->is_verified)
-                            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            @else
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
+                                @if($treatment->is_added)
+                                <svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7M5 8l4 4L19 2"></path>
+                                </svg>
+                                @else
+                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                @endif
+                                @else
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7"></path>
+                                </svg>
                             @endif
                         </button>
                     </td>

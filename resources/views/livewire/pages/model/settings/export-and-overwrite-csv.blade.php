@@ -8,11 +8,12 @@ new class extends Component {
     public $isExporting = false;
     public $exportMessage = '';
     public $hasError = false;
+    public $wasAdded = false;
 
     private function getAllTreatments()
     {
         try {
-            // Get treatments from API
+            // get treatments from api
             $response = Http::get('http://127.0.0.1:8000/get-csv');
 
             if (!$response->successful()) {
@@ -21,9 +22,10 @@ new class extends Component {
 
             $apiTreatments = collect($response->json());
 
-            // Get treatments from database
+            // get treatments from database
             $dbTreatments = Treatment::with('species')
                 ->where('is_verified', true)
+                ->where('is_added', false)
                 ->get()
                 ->map(function ($treatment) {
                     return [
@@ -36,10 +38,9 @@ new class extends Component {
                     ];
                 });
 
-            // Merge and remove duplicates
+            // merge and remove duplicates
             return $apiTreatments->concat($dbTreatments)
                 ->unique(function ($item) {
-                    // Create a unique key based on all values to identify duplicates
                     return sprintf(
                         '%s-%.2f-%d-%.1f-%.1f-%d',
                         $item['species'],
@@ -63,10 +64,10 @@ new class extends Component {
         $this->hasError = false;
 
         try {
-            // Get merged treatments
+            // get merged treatments
             $treatments = $this->getAllTreatments();
 
-            // Create CSV content
+            // create csv content
             $csvContent = "species,emsConcentration,soakDuration,lowestTemp,highestTemp,result\n";
 
             foreach ($treatments as $treatment) {
@@ -81,18 +82,39 @@ new class extends Component {
                 );
             }
 
-            // Create temporary file
+            // get all verified treatments first
+            $verifiedTreatments = Treatment::with('species')
+                ->where('is_verified', true)
+                ->get();
+
+            // for each verified treatment, find its duplicates and mark them as added
+            foreach ($verifiedTreatments as $verifiedTreatment) {
+                Treatment::whereHas('species', function ($query) use ($verifiedTreatment) {
+                    $query->where('name', $verifiedTreatment->species->name);
+                })
+                ->where('emsConcentration', $verifiedTreatment->emsConcentration)
+                ->where('soakDuration', $verifiedTreatment->soakDuration)
+                ->where('lowestTemp', $verifiedTreatment->lowestTemp)
+                ->where('highestTemp', $verifiedTreatment->highestTemp)
+                ->where('result', $verifiedTreatment->result)
+                ->update([
+                'is_added' => true,
+                'is_verified' => true,
+                ]);
+            }
+
+            // create temporary file
             $tempFile = tempnam(sys_get_temp_dir(), 'treatments_');
             file_put_contents($tempFile, $csvContent);
 
-            // Upload the file
+            // upload the file
             $response = Http::attach(
                 'file',
                 file_get_contents($tempFile),
                 'treatments.csv'
             )->post('http://127.0.0.1:8000/upload-csv');
 
-            unlink($tempFile); // Clean up temporary file
+            unlink($tempFile); // clean up temporary file
 
             if ($response->successful()) {
                 $this->exportMessage = 'Treatments exported and uploaded successfully!';
