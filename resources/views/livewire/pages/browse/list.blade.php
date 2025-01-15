@@ -1,6 +1,9 @@
 <?php
+
+
 use App\Models\Treatment;
 use App\Models\Species;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\On;
 use Livewire\WithPagination;
@@ -24,6 +27,12 @@ new class extends Component {
             $treatment->update([
                 'is_verified' => !$treatment->is_verified
             ]);
+        } else {
+            Notification::make()
+                ->title('Action not allowed!')
+                ->body('Record is already merged to training data')
+                ->danger()
+                ->send();
         }
     }
 
@@ -115,22 +124,22 @@ new class extends Component {
                     <td class="py-2 px-4 border-b text-sm flex justify-center">
                         <button wire:click="toggleVerification({{ $treatment->id }})" class="focus:outline-none">
                             @if($treatment->is_verified)
-                                @if($treatment->is_added)
-                                <svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7M5 8l4 4L19 2"></path>
-                                </svg>
-                                @else
-                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                @endif
-                                @else
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7"></path>
-                                </svg>
+                            @if($treatment->is_added)
+                            <svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7M5 8l4 4L19 2"></path>
+                            </svg>
+                            @else
+                            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            @endif
+                            @else
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
                             @endif
                         </button>
                     </td>

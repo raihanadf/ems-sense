@@ -1,8 +1,10 @@
 <?php
 
 
+
 use App\Models\Species;
 use App\Models\Treatment;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Http;
@@ -91,6 +93,11 @@ new class extends Component {
             'result' => $this->result,
             'successRate' => $this->successRate,
         ]);
+
+        Notification::make()
+            ->title('Treatment Saved!')
+            ->success()
+            ->send();
 
         $this->dispatch('treatment-created');
         $this->closeModal();
