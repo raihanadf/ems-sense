@@ -62,7 +62,6 @@ new class extends Component {
                 throw new \Exception('Failed to fetch species from API');
             }
         } catch (\Exception $e) {
-        dd($e);
             $this->syncMessage = 'Failed to synchronize species list: ' . $e->getMessage();
             $this->hasError = true;
         }
