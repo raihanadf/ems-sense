@@ -16,8 +16,20 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Raihan',
+            'email' => 'r@r.com',
+            'password' => '$2y$12$T7yfjVsZLLbsQVYAd4s5tumQoDWpImOB.iwaZ4BDy.mYdNOZfXyQ.',
+            'role' => 'curator',
+        ]);
+
+        User::factory()->create([
+            'name' => 'Irfan',
+            'email' => 'i@i.com',
+            'password' => '$2y$12$T7yfjVsZLLbsQVYAd4s5tumQoDWpImOB.iwaZ4BDy.mYdNOZfXyQ.',
+        ]);
+
+        $this->call([
+            SpeciesSeeder::class,
         ]);
     }
 }
