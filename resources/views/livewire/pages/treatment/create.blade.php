@@ -1,7 +1,4 @@
 <?php
-
-
-
 use App\Models\Species;
 use App\Models\Treatment;
 use Filament\Notifications\Notification;
@@ -18,6 +15,9 @@ new class extends Component {
     public $soakDuration;
     public $lowestTemp;
     public $highestTemp;
+    public $manualOverride = false;
+    public $overrideResult = false;
+    public $note = '';
 
     public Collection $species;
 
@@ -37,6 +37,7 @@ new class extends Component {
             'soakDuration' => 'required|numeric|min:1|max:1440',
             'lowestTemp' => 'required|numeric',
             'highestTemp' => 'required|numeric',
+            'note' => 'nullable|string|max:500',
         ];
     }
 
@@ -45,7 +46,6 @@ new class extends Component {
         $this->validate();
 
         $this->isLoading = true;
-        $this->showModal = true;
 
         try {
             $response = Http::post('http://127.0.0.1:8000/process', [
@@ -61,14 +61,18 @@ new class extends Component {
                 $this->result = $data['result'];
                 $this->successRate = $data['success_rate'];
                 $this->isSuccess = $this->result == 1;
+                $this->overrideResult = (bool)$this->result; // Convert to boolean
             } else {
                 $this->isSuccess = false;
+                $this->overrideResult = false;
             }
 
         } catch (\Exception $e) {
             $this->isSuccess = false;
+            $this->overrideResult = false;
         } finally {
             $this->isLoading = false;
+            $this->showModal = true;
         }
     }
 
@@ -76,12 +80,29 @@ new class extends Component {
     {
         $this->showModal = false;
         $this->isLoading = false;
+        $this->note = '';
+        $this->manualOverride = false;
+    }
+
+    public function toggleOverride()
+    {
+        $this->manualOverride = !$this->manualOverride;
+    }
+
+    public function updateOverrideResult($value)
+    {
+        $this->overrideResult = (bool)$value;
     }
 
     public function save()
     {
+        $this->validate([
+            'note' => 'nullable|string|max:500',
+        ]);
+
         $speciesId = Species::where('name', $this->selectedSpecies)->first()->id;
         $userId = auth()->user()->id;
+        $finalResult = $this->manualOverride ? ($this->overrideResult ? 1 : 0) : $this->result;
 
         Treatment::create([
             'user_id' => $userId,
@@ -90,8 +111,10 @@ new class extends Component {
             'soakDuration' => (int) $this->soakDuration,
             'lowestTemp' => (float) $this->lowestTemp,
             'highestTemp' => (float) $this->highestTemp,
-            'result' => $this->result,
+            'result' => $finalResult,
             'successRate' => $this->successRate,
+            'note' => $this->note,
+            'overridden' => $this->manualOverride,
         ]);
 
         Notification::make()
@@ -180,7 +203,7 @@ new class extends Component {
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div
-                class="inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:w-3/5 sm:max-w-3xl {{ !$isLoading && $isSuccess ? 'bg-green-100' : (!$isLoading ? 'bg-red-100' : 'bg-white') }}">
+                class="inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:w-3/5 sm:max-w-3xl {{ !$isLoading && ($manualOverride ? $overrideResult : $isSuccess) ? 'bg-green-100' : (!$isLoading ? 'bg-red-100' : 'bg-white') }}">
                 @if($isLoading)
                 <div class="p-6 flex flex-col items-center justify-center">
                     <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-500 mb-4"></div>
@@ -192,8 +215,8 @@ new class extends Component {
                     <div class="space-y-4">
                         <div class="sm:flex sm:items-start">
                             <div
-                                class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 {{ $isSuccess ? 'bg-green-100' : 'bg-red-100' }}">
-                                @if($isSuccess)
+                                class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 {{ ($manualOverride ? $overrideResult : $isSuccess) ? 'bg-green-100' : 'bg-red-100' }}">
+                                @if(($manualOverride ? $overrideResult : $isSuccess))
                                 <svg class="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -209,7 +232,7 @@ new class extends Component {
                             </div>
                             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                                 <h3
-                                    class="text-lg leading-6 font-medium {{ $isSuccess ? 'text-green-900' : 'text-red-900' }}">
+                                    class="text-lg leading-6 font-medium {{ ($manualOverride ? $overrideResult : $isSuccess) ? 'text-green-900' : 'text-red-900' }}">
                                     Processing Results
                                 </h3>
                             </div>
@@ -219,8 +242,8 @@ new class extends Component {
                             <div class="bg-white p-4 rounded-lg shadow">
                                 <div class="text-sm font-medium text-gray-500">Result</div>
                                 <div
-                                    class="mt-1 text-2xl font-semibold {{ $isSuccess ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $isSuccess ? 'Success' : 'Failed' }}
+                                    class="mt-1 text-2xl font-semibold {{ ($manualOverride ? $overrideResult : $isSuccess) ? 'text-green-600' : 'text-red-600' }}">
+                                    {{ ($manualOverride ? $overrideResult : $isSuccess) ? 'Success' : 'Failed' }}
                                 </div>
                             </div>
                             <div class="bg-white p-4 rounded-lg shadow">
@@ -229,19 +252,65 @@ new class extends Component {
                             </div>
                         </div>
 
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <button type="button" wire:click="toggleOverride"
+                                        class="flex items-center focus:outline-none">
+                                        <span
+                                            class="relative inline-block w-10 h-5 transition duration-200 ease-in-out rounded-full {{ $manualOverride ? 'bg-green-500' : 'bg-gray-300' }}">
+                                            <span
+                                                class="absolute inset-0 flex items-center justify-{{ $manualOverride ? 'end' : 'start' }}">
+                                                <span
+                                                    class="w-4 h-4 transition duration-200 ease-in-out transform bg-white rounded-full shadow-md translate-x-{{ $manualOverride ? '5' : '1' }}"></span>
+                                            </span>
+                                        </span>
+                                    </button>
+                                    <span class="ml-2 text-sm font-medium text-gray-700">Override Result</span>
+                                </div>
+                                @if($manualOverride)
+                                <div class="flex items-center space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="overrideResult" wire:click="updateOverrideResult(1)"
+                                            {{ $overrideResult ? 'checked' : '' }}
+                                            class="text-green-600 focus:ring-green-500 h-4 w-4">
+                                        <span class="ml-2 text-sm text-green-700">Success</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="overrideResult" wire:click="updateOverrideResult(0)"
+                                            {{ !$overrideResult ? 'checked' : '' }}
+                                            class="text-red-600 focus:ring-red-500 h-4 w-4">
+                                        <span class="ml-2 text-sm text-red-700">Failed</span>
+                                    </label>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label for="note" class="block text-sm font-medium text-gray-700">Notes</label>
+                            <textarea id="note" wire:model="note" rows="3"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="Add any observations or notes about this treatment..."></textarea>
+                        </div>
+
                         <div class="mt-2">
-                            <p class="text-sm {{ $isSuccess ? 'text-green-700' : 'text-red-700' }}">
-                                {{ $isSuccess
-                                ? 'The process was successful with the given parameters.'
-                                : 'The process was unsuccessful with the given parameters. Consider adjusting your
-                                inputs.' }}
+                            <p
+                                class="text-sm {{ ($manualOverride ? $overrideResult : $isSuccess) ? 'text-green-700' : 'text-red-700' }}">
+                                @if($manualOverride)
+                                {{ $overrideResult ? 'You have manually marked this treatment as successful.' : 'You
+                                have manually marked this treatment as failed.' }}
+                                @else
+                                {{ $isSuccess ? 'The process was successful with the given parameters.' : 'The process
+                                was unsuccessful with the given parameters. Consider adjusting your inputs.' }}
+                                @endif
                             </p>
                         </div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                     <button type="button"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm {{ $isSuccess ? 'bg-green-600 ' : 'bg-black' }}"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm {{ ($manualOverride ? $overrideResult : $isSuccess) ? 'bg-green-600 ' : 'bg-black' }}"
                         wire:click="save">
                         Save
                     </button>
