@@ -5,6 +5,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 new class extends Component {
     public $showModal = false;
@@ -21,20 +22,56 @@ new class extends Component {
 
     public Collection $species;
 
+    public $minConcentration;
+    public $maxConcentration;
+    public $minSoakDuration;
+    public $maxSoakDuration;
+    public $minLowestTemp;
+    public $maxLowestTemp;
+    public $minHighestTemp;
+    public $maxHighestTemp;
+
     public $result;
     public $successRate;
 
     public function mount()
     {
         $this->species = Species::all();
+
+        $this->fetchDynamicLimits();
+    }
+
+    public function fetchDynamicLimits()
+    {
+        $stats = DB::table('treatments')
+            ->selectRaw('
+                MIN(emsConcentration) as min_concentration,
+                MAX(emsConcentration) as max_concentration,
+                MIN(soakDuration) as min_soak_duration,
+                MAX(soakDuration) as max_soak_duration,
+                MIN(lowestTemp) as min_lowest_temp,
+                MAX(lowestTemp) as max_lowest_temp,
+                MIN(highestTemp) as min_highest_temp,
+                MAX(highestTemp) as max_highest_temp
+            ')
+            ->first();
+
+        $this->minConcentration = $stats->min_concentration ?? 0.01;
+        $this->maxConcentration = $stats->max_concentration ?? 100;
+        $this->minSoakDuration = $stats->min_soak_duration ?? 1;
+        $this->maxSoakDuration = $stats->max_soak_duration ?? 1440;
+        $this->minLowestTemp = $stats->min_lowest_temp ?? 0;
+        $this->maxLowestTemp = $stats->max_lowest_temp ?? 100;
+        $this->minHighestTemp = $stats->min_highest_temp ?? 0;
+        $this->maxHighestTemp = $stats->max_highest_temp ?? 100;
     }
 
     public function rules()
     {
         return [
             'selectedSpecies' => 'required',
-            'concentration' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/|min:0.01|max:100',
-            'soakDuration' => 'required|numeric|min:1|max:1440',
+            'concentration' => 'required|numeric',
+            'soakDuration' => 'required|numeric',
             'lowestTemp' => 'required|numeric',
             'highestTemp' => 'required|numeric',
             'note' => 'nullable|string|max:500',
@@ -124,6 +161,9 @@ new class extends Component {
 
         $this->dispatch('treatment-created');
         $this->closeModal();
+
+        // After saving, refresh the dynamic limits to include the new data
+        $this->fetchDynamicLimits();
     }
 }; ?>
 
@@ -143,33 +183,39 @@ new class extends Component {
 
             <div class="flex flex-wrap -mx-2">
                 <div class="w-full md:w-1/2 px-2 mb-4">
-                    <label for="concentration" class="block text-sm font-medium text-gray-700">Concentration
-                        (1-100)</label>
-                    <input type="text" id="concentration" wire:model="concentration" min="0.01" max="100"
-                        pattern="^\d+(\.\d{1,2})?$"
+                    <label for="concentration" class="block text-sm font-medium text-gray-700">
+                        Concentration (observed range: {{ number_format($minConcentration, 2) }} - {{
+                        number_format($maxConcentration, 2) }})
+                    </label>
+                    <input type="text" id="concentration" wire:model="concentration"
                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         required>
                 </div>
 
                 <div class="w-full md:w-1/2 px-2 mb-4">
-                    <label for="soakDuration" class="block text-sm font-medium text-gray-700">Soak Duration (1-1440
-                        minutes)</label>
-                    <input type="number" id="soakDuration" wire:model="soakDuration" min="1" max="1440"
+                    <label for="soakDuration" class="block text-sm font-medium text-gray-700">
+                        Soak Duration (observed range: {{ $minSoakDuration }} - {{ $maxSoakDuration }} minutes)
+                    </label>
+                    <input type="number" id="soakDuration" wire:model="soakDuration"
                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         required>
                 </div>
 
                 <div class="w-full md:w-1/2 px-2 mb-4">
-                    <label for="lowestTemp" class="block text-sm font-medium text-gray-700">Lowest Temperature
-                        (°C)</label>
+                    <label for="lowestTemp" class="block text-sm font-medium text-gray-700">
+                        Lowest Temperature (observed range: {{ number_format($minLowestTemp, 1) }} - {{
+                        number_format($maxLowestTemp, 1) }} °C)
+                    </label>
                     <input type="number" id="lowestTemp" wire:model="lowestTemp"
                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         required>
                 </div>
 
                 <div class="w-full md:w-1/2 px-2 mb-4">
-                    <label for="highestTemp" class="block text-sm font-medium text-gray-700">Highest Temperature
-                        (°C)</label>
+                    <label for="highestTemp" class="block text-sm font-medium text-gray-700">
+                        Highest Temperature (observed range: {{ number_format($minHighestTemp, 1) }} - {{
+                        number_format($maxHighestTemp, 1) }} °C)
+                    </label>
                     <input type="number" id="highestTemp" wire:model="highestTemp"
                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         required>
